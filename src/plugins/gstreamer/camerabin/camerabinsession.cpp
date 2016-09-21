@@ -680,6 +680,8 @@ QCameraViewfinderSettings CameraBinSession::viewfinderSettings() const
 
 void CameraBinSession::ViewfinderProbe::probeCaps(GstCaps *caps)
 {
+    QGstreamerVideoProbeControl::probeCaps(caps);
+
     // Update actual viewfinder settings on viewfinder caps change
     const GstStructure *s = gst_caps_get_structure(caps, 0);
     const QPair<qreal, qreal> frameRate = QGstUtils::structureFrameRateRange(s);
@@ -1197,6 +1199,11 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
     }
 
     return false;
+}
+
+QGstreamerVideoProbeControl *CameraBinSession::videoProbe()
+{
+    return &m_viewfinderProbe;
 }
 
 QString CameraBinSession::currentContainerFormat() const
