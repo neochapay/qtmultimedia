@@ -39,6 +39,14 @@ This package contains the QtMultimedia module
 Summary:    Qt Multimedia - development files
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-audio-alsa = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-audio-pulseaudio = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-mediaservice-gstaudiodecoder = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-mediaservice-gstcamerabin = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-mediaservice-gstmediacapture = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-mediaservice-gstmediaplayer = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-playlistformats-m3u = %{version}-%{release}
+Requires:   qt5-qtmultimedia-plugin-resourcepolicy-resourceqt = %{version}-%{release}
 
 %description devel
 Qt is a cross-platform application and UI framework. Using Qt, you can
