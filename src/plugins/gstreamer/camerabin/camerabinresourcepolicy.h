@@ -53,7 +53,7 @@ public:
         VideoCaptureResources
     };
 
-    CamerabinResourcePolicy(QObject *parent);
+    CamerabinResourcePolicy(QObject *parent = nullptr);
     ~CamerabinResourcePolicy();
 
     ResourceSet resourceSet() const;

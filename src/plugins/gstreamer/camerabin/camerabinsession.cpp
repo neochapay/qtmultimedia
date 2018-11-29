@@ -113,11 +113,15 @@ CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *pa
     :QObject(parent),
      m_recordingActive(false),
      m_status(QCamera::UnloadedStatus),
-     m_pendingState(QCamera::UnloadedState),
+     m_requestedState(QCamera::UnloadedState),
+     m_transientState(QCamera::UnloadedState),
+     m_acceptedState(QCamera::UnloadedState),
      m_muted(false),
-     m_busy(false),
      m_readyForCapture(false),
      m_captureMode(QCamera::CaptureStillImage),
+     m_appliedCaptureMode(QCamera::CaptureStillImage),
+     m_busy(false),
+     m_reportedReadyForCapture(false),
      m_audioInputFactory(0),
      m_videoInputFactory(0),
      m_viewfinder(0),
@@ -187,6 +191,10 @@ CameraBinSession::CameraBinSession(GstElementFactory *sourceFactory, QObject *pa
 
     g_object_set(G_OBJECT(m_camerabin), PREVIEW_CAPS_PROPERTY, previewCaps, NULL);
     gst_caps_unref(previewCaps);
+
+    connect(&m_resourcePolicy, &CamerabinResourcePolicy::resourcesGranted, this, &CameraBinSession::applyState);
+    connect(&m_resourcePolicy, &CamerabinResourcePolicy::resourcesDenied, this, &CameraBinSession::resourcesLost);
+    connect(&m_resourcePolicy, &CamerabinResourcePolicy::resourcesLost, this, &CameraBinSession::resourcesLost);
 }
 
 CameraBinSession::~CameraBinSession()
@@ -270,7 +278,7 @@ bool CameraBinSession::setupCameraBin()
 #endif
         m_viewfinderHasChanged = false;
         if (!m_viewfinderElement) {
-            if (m_pendingState == QCamera::ActiveState)
+            if (m_requestedState == QCamera::ActiveState)
                 qWarning() << "Starting camera without viewfinder available";
             m_viewfinderElement = gst_element_factory_make("fakesink", NULL);
         }
@@ -561,22 +569,25 @@ void CameraBinSession::captureImage(int requestId, const QString &fileName)
     g_signal_emit_by_name(G_OBJECT(m_camerabin), CAPTURE_START, NULL);
 
     m_imageFileName = actualFileName;
+
+    updateCaptureStatus();
+}
+
+void CameraBinSession::updateCaptureStatus()
+{
+    if (m_reportedReadyForCapture != m_readyForCapture) {
+        m_readyForCapture = m_reportedReadyForCapture;
+        emit handleReadyForCaptureChanged(m_readyForCapture);
+    }
 }
 
 void CameraBinSession::setCaptureMode(QCamera::CaptureModes mode)
 {
-    m_captureMode = mode;
-
-    switch (m_captureMode) {
-    case QCamera::CaptureStillImage:
-        g_object_set(m_camerabin, MODE_PROPERTY, CAMERABIN_IMAGE_MODE, NULL);
-        break;
-    case QCamera::CaptureVideo:
-        g_object_set(m_camerabin, MODE_PROPERTY, CAMERABIN_VIDEO_MODE, NULL);
-        break;
+    if (m_captureMode != mode) {
+        m_captureMode = mode;
+        emit m_cameraControl->captureModeChanged(m_captureMode);
     }
 
-    m_recorderControl->updateStatus();
 }
 
 QUrl CameraBinSession::outputLocation() const
@@ -631,32 +642,29 @@ void CameraBinSession::setViewfinder(QObject *viewfinder)
         viewfinder = 0;
 
     if (m_viewfinder != viewfinder) {
-        bool oldReady = isReady();
-
         if (m_viewfinder) {
             disconnect(m_viewfinder, SIGNAL(sinkChanged()),
                        this, SLOT(handleViewfinderChange()));
             disconnect(m_viewfinder, SIGNAL(readyChanged(bool)),
-                       this, SIGNAL(readyChanged(bool)));
+                       this, SLOT(applyState()));
 
             m_busHelper->removeMessageFilter(m_viewfinder);
         }
 
         m_viewfinder = viewfinder;
         m_viewfinderHasChanged = true;
+        m_transientState = QCamera::UnloadedState;
 
         if (m_viewfinder) {
             connect(m_viewfinder, SIGNAL(sinkChanged()),
                        this, SLOT(handleViewfinderChange()));
             connect(m_viewfinder, SIGNAL(readyChanged(bool)),
-                    this, SIGNAL(readyChanged(bool)));
+                       this, SLOT(applyState()));
 
             m_busHelper->installMessageFilter(m_viewfinder);
         }
 
-        emit viewfinderChanged();
-        if (oldReady != isReady())
-            emit readyChanged(isReady());
+        applyState();
     }
 }
 
@@ -687,7 +695,9 @@ void CameraBinSession::handleViewfinderChange()
     //the viewfinder will be reloaded
     //shortly when the pipeline is started
     m_viewfinderHasChanged = true;
-    emit viewfinderChanged();
+    m_transientState = QCamera::UnloadedState;
+
+    applyState();
 }
 
 void CameraBinSession::setStatus(QCamera::Status status)
@@ -697,8 +707,6 @@ void CameraBinSession::setStatus(QCamera::Status status)
 
     m_status = status;
     emit statusChanged(m_status);
-
-    setStateHelper(m_pendingState);
 }
 
 QCamera::Status CameraBinSession::status() const
@@ -706,60 +714,122 @@ QCamera::Status CameraBinSession::status() const
     return m_status;
 }
 
-QCamera::State CameraBinSession::pendingState() const
+QCamera::State CameraBinSession::requestedState() const
 {
-    return m_pendingState;
+    return m_requestedState;
 }
 
 void CameraBinSession::setState(QCamera::State newState)
 {
-    if (newState == m_pendingState)
+    if (newState == m_requestedState)
         return;
 
-    m_pendingState = newState;
-    emit pendingStateChanged(m_pendingState);
+    if (newState < m_transientState) {
+        m_transientState = newState;
+    }
+
+    m_requestedState = newState;
+    emit pendingStateChanged(m_requestedState);
+    m_cameraControl->stateChanged(m_requestedState);
 
 #if CAMERABIN_DEBUG
     qDebug() << Q_FUNC_INFO << newState;
 #endif
 
-    setStateHelper(newState);
+    applyState();
 }
 
-void CameraBinSession::setStateHelper(QCamera::State state)
+void CameraBinSession::applyState()
 {
-    switch (state) {
+    CamerabinResourcePolicy::ResourceSet resourceSet = CamerabinResourcePolicy::NoResources;
+    switch (m_requestedState) {
     case QCamera::UnloadedState:
-        unload();
+        resourceSet = CamerabinResourcePolicy::NoResources;
         break;
     case QCamera::LoadedState:
-        if (m_status == QCamera::ActiveStatus)
-            stop();
-        else if (m_status == QCamera::UnloadedStatus)
-            load();
+        resourceSet = CamerabinResourcePolicy::LoadedResources;
         break;
     case QCamera::ActiveState:
-        // If the viewfinder changed while in the loaded state, we need to reload the pipeline
-        if (m_status == QCamera::LoadedStatus && !m_viewfinderHasChanged)
-            start();
-        else if (m_status == QCamera::UnloadedStatus || m_viewfinderHasChanged)
-            load();
+        resourceSet = m_captureMode == QCamera::CaptureStillImage
+                ? CamerabinResourcePolicy::ImageCaptureResources
+                : CamerabinResourcePolicy::VideoCaptureResources;
+        break;
     }
+
+    if (m_resourcePolicy.resourceSet() != resourceSet) {
+        m_resourcePolicy.setResourceSet(resourceSet);
+    }
+
+    if (!m_resourcePolicy.isResourcesGranted()) {
+        m_transientState = QCamera::UnloadedState;
+    }
+
+    if (m_transientState < m_acceptedState) {
+        // Ensure that if something tried to unload or stop the pipeline that it happens and
+        // settings changes are applied.
+        switch (m_transientState) {
+        case QCamera::UnloadedState:
+            unload();
+            break;
+        case QCamera::LoadedState:
+            stop();
+            break;
+        case QCamera::ActiveState:
+            // Unreachable
+            break;
+        }
+    }
+
+    if (m_requestedState > m_acceptedState
+            && !m_busy
+            && isReady()
+            && m_resourcePolicy.isResourcesGranted()) {
+        m_transientState = m_requestedState;
+
+        switch (m_requestedState) {
+        case QCamera::UnloadedState:
+            // Unreachable.
+            break;
+        case QCamera::LoadedState:
+            load();
+            break;
+        case QCamera::ActiveState:
+            if (m_status == QCamera::UnloadedStatus) {
+                load();
+            } else if (m_status == QCamera::LoadedStatus) {
+                start();
+            }
+        }
+    }
+}
+
+void CameraBinSession::resourcesLost()
+{
+    m_transientState = QCamera::UnloadedState;
+
+    applyState();
 }
 
 void CameraBinSession::setError(int err, const QString &errorString)
 {
-    m_pendingState = QCamera::UnloadedState;
-    emit error(err, errorString);
-    setStatus(QCamera::UnloadedStatus);
+    m_requestedState = QCamera::UnloadedState;
+    m_transientState = QCamera::UnloadedState;
+
+    emit m_cameraControl->error(err, errorString);
+
+    applyState();
+
+    emit m_cameraControl->stateChanged(m_requestedState);
 }
 
 void CameraBinSession::load()
 {
-    if (m_status != QCamera::UnloadedStatus && !m_viewfinderHasChanged)
+    if (m_status != QCamera::UnloadedStatus)
         return;
 
-    setStatus(QCamera::LoadingStatus);
+    m_acceptedState = QCamera::LoadedState;
+
+    m_status = QCamera::LoadingStatus;
 
     if (!setupCameraBin()) {
         setError(QCamera::CameraError, QStringLiteral("No camera source available"));
@@ -780,23 +850,34 @@ void CameraBinSession::load()
     setupCaptureResolution();
 
     gst_element_set_state(m_camerabin, GST_STATE_READY);
+
+    emit statusChanged(m_status);
 }
 
 void CameraBinSession::unload()
 {
-    if (m_status == QCamera::UnloadedStatus || m_status == QCamera::UnloadingStatus)
+    if (m_status == QCamera::UnloadedStatus)
         return;
 
-    // We save the recording state in case something reacted to setStatus() and
-    // stopped recording.
-    bool wasRecording = m_recordingActive;
-
-    setStatus(QCamera::UnloadingStatus);
+    bool changed = m_status != QCamera::UnloadingStatus;
+    m_status = QCamera::UnloadingStatus;
 
     if (m_recordingActive)
         stopVideoRecording();
-    else if (!wasRecording)
-        handleBusyChanged(false);
+
+    if (!m_busy) {
+        m_acceptedState = QCamera::UnloadedState;
+
+        if (m_viewfinderInterface)
+            m_viewfinderInterface->stopRenderer();
+
+        gst_element_set_state(m_camerabin, GST_STATE_NULL);
+
+        m_status = QCamera::UnloadedStatus;
+        emit statusChanged(m_status);
+    } else if (changed) {
+        emit statusChanged(m_status);
+    }
 }
 
 void CameraBinSession::start()
@@ -804,7 +885,20 @@ void CameraBinSession::start()
     if (m_status != QCamera::LoadedStatus)
         return;
 
-    setStatus(QCamera::StartingStatus);
+    m_acceptedState = QCamera::ActiveState;
+
+    m_status = QCamera::StartingStatus;
+
+    m_appliedCaptureMode = m_captureMode;
+
+    switch (m_captureMode) {
+    case QCamera::CaptureStillImage:
+        g_object_set(m_camerabin, MODE_PROPERTY, CAMERABIN_IMAGE_MODE, NULL);
+        break;
+    case QCamera::CaptureVideo:
+        g_object_set(m_camerabin, MODE_PROPERTY, CAMERABIN_VIDEO_MODE, NULL);
+        break;
+    }
 
     m_recorderControl->applySettings();
 
@@ -822,22 +916,30 @@ void CameraBinSession::start()
     setupCaptureResolution();
 
     gst_element_set_state(m_camerabin, GST_STATE_PLAYING);
+
+    emit statusChanged(m_status);
 }
 
 void CameraBinSession::stop()
 {
-    if (m_status != QCamera::ActiveStatus)
+    if (m_status != QCamera::ActiveStatus && m_status != QCamera::StartingStatus)
         return;
 
-    setStatus(QCamera::StoppingStatus);
+    m_status = QCamera::StoppingStatus;
 
     if (m_recordingActive)
         stopVideoRecording();
 
-    if (m_viewfinderInterface)
-        m_viewfinderInterface->stopRenderer();
+    if (!m_busy) {
+        m_acceptedState = QCamera::LoadedState;
 
-    gst_element_set_state(m_camerabin, GST_STATE_READY);
+        if (m_viewfinderInterface)
+            m_viewfinderInterface->stopRenderer();
+
+        gst_element_set_state(m_camerabin, GST_STATE_READY);
+    }
+
+    emit statusChanged(m_status);
 }
 
 bool CameraBinSession::isBusy() const
@@ -859,11 +961,8 @@ void CameraBinSession::updateBusyStatus(GObject *o, GParamSpec *p, gpointer d)
     g_object_get(o, "idle", &idle, NULL);
     bool busy = !idle;
 
-    if (session->m_busy != busy) {
-        session->m_busy = busy;
-        QMetaObject::invokeMethod(session, "handleBusyChanged",
-                                  Qt::QueuedConnection,
-                                  Q_ARG(bool, busy));
+    if (session->m_busy.fetchAndStoreRelaxed(busy) != busy) {
+        QMetaObject::invokeMethod(session, "applyState", Qt::QueuedConnection);
     }
 }
 
@@ -875,10 +974,9 @@ void CameraBinSession::updateReadyForCapture(GObject *o, GParamSpec *p, gpointer
     CameraBinSession *session = reinterpret_cast<CameraBinSession *>(d);
     gboolean ready = false;
     g_object_get(o, "ready-for-capture", &ready, NULL);
-    if (session->m_readyForCapture != ready) {
-        session->m_readyForCapture = ready;
-        QMetaObject::invokeMethod(session, "handleReadyForCaptureChanged",
-                                  Qt::QueuedConnection, Q_ARG(bool, ready));
+
+    if (session->m_reportedReadyForCapture.fetchAndStoreRelaxed(ready) != ready) {
+        QMetaObject::invokeMethod(session, "updateCaptureStatus", Qt::QueuedConnection);
     }
 }
 
@@ -1091,6 +1189,9 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
                     default:
                         break;
                     }
+
+                    // Update any chained state changes.
+                    applyState();
                 }
                 break;
             default:
@@ -1125,6 +1226,10 @@ QString CameraBinSession::currentContainerFormat() const
 
 void CameraBinSession::recordVideo()
 {
+    if (!m_reportedReadyForCapture || m_appliedCaptureMode != QCamera::CaptureVideo || m_busy) {
+        return;
+    }
+
     QString format = currentContainerFormat();
     if (format.isEmpty())
         format = m_mediaContainerControl->actualContainerFormat();
@@ -1533,30 +1638,6 @@ void CameraBinSession::elementRemoved(GstBin *, GstElement *element, CameraBinSe
         session->m_videoEncoder = 0;
     else if (element == session->m_muxer)
         session->m_muxer = 0;
-}
-
-void CameraBinSession::handleBusyChanged(bool busy)
-{
-    // don't do anything if we are not unloading.
-    // It could be that the camera is starting again while it is being unloaded
-    if (m_status != QCamera::UnloadingStatus) {
-        if (m_busy != busy)
-            emit busyChanged(m_busy = busy);
-        return;
-    }
-
-    // Now we can really stop
-    if (m_viewfinderInterface)
-        m_viewfinderInterface->stopRenderer();
-
-    gst_element_set_state(m_camerabin, GST_STATE_NULL);
-
-    if (m_busy != busy)
-        emit busyChanged(m_busy = busy);
-
-    m_supportedViewfinderSettings.clear();
-
-    setStatus(QCamera::UnloadedStatus);
 }
 
 QT_END_NAMESPACE

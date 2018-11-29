@@ -65,29 +65,13 @@ public:
     bool canChangeProperty(PropertyChangeType changeType, QCamera::Status status) const;
     bool viewfinderColorSpaceConversion() const;
 
-    CamerabinResourcePolicy *resourcePolicy() { return m_resourcePolicy; }
-
 public slots:
-    void reloadLater();
     void setViewfinderColorSpaceConversion(bool enabled);
-
-private slots:
-    void delayedReload();
-
-    void handleResourcesGranted();
-    void handleResourcesLost();
-
-    void handleBusyChanged(bool);
-    void handleCameraError(int error, const QString &errorString);
 
 private:
     void updateSupportedResolutions(const QString &device);
 
     CameraBinSession *m_session;
-    QCamera::State m_state;
-    CamerabinResourcePolicy *m_resourcePolicy;
-
-    bool m_reloadPending;
 };
 
 QT_END_NAMESPACE

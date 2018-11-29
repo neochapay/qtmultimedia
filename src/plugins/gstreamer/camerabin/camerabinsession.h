@@ -49,6 +49,8 @@
 #include <private/qmediastoragelocation_p.h>
 #include "qcamera.h"
 
+#include "camerabinresourcepolicy.h"
+
 QT_BEGIN_NAMESPACE
 
 class QGstreamerMessage;
@@ -118,6 +120,7 @@ public:
     CameraBinLocks *cameraLocksControl();
 #endif
 
+    CamerabinResourcePolicy *resourcePolicy() { return &m_resourcePolicy; }
     CameraBinZoom *cameraZoomControl() const { return m_cameraZoomControl; }
     CameraBinImageProcessing *imageProcessingControl() const { return m_imageProcessingControl; }
     CameraBinCaptureDestination *captureDestinationControl() const { return m_captureDestinationControl; }
@@ -143,7 +146,7 @@ public:
     void captureImage(int requestId, const QString &fileName);
 
     QCamera::Status status() const;
-    QCamera::State pendingState() const;
+    QCamera::State requestedState() const;
     bool isBusy() const;
     bool isReadyForCapture() const;
 
@@ -182,7 +185,8 @@ public slots:
 private slots:
     void handleViewfinderChange();
     void setupCaptureResolution();
-    void handleBusyChanged(bool busy);
+    void updateCaptureStatus();
+    void applyState();
 
 private:
     void load();
@@ -191,7 +195,7 @@ private:
     void stop();
 
     void setStatus(QCamera::Status status);
-    void setStateHelper(QCamera::State state);
+    void resourcesLost();
     void setError(int error, const QString &errorString);
 
     bool setupCameraBin();
@@ -211,15 +215,20 @@ private:
     bool m_recordingActive;
     QString m_captureDevice;
     QCamera::Status m_status;
-    QCamera::State m_pendingState;
+    QCamera::State m_requestedState;    // The desired state, transitioning to this may be blocked resource policy or outstanding actions.
+    QCamera::State m_transientState;    // A state that must be passed through. If the pipeline is busy and can't be unloaded immediately it should still go through unloaded when it can to apply settings changes.
+    QCamera::State m_acceptedState;     // The current state or the state the pipeline is actively transitioning to.
     QString m_inputDevice;
     bool m_muted;
-    bool m_busy;
     bool m_readyForCapture;
     QMediaStorageLocation m_mediaStorageLocation;
 
     QCamera::CaptureModes m_captureMode;
+    QCamera::CaptureModes m_appliedCaptureMode;
     QMap<QByteArray, QVariant> m_metaData;
+
+    QAtomicInteger<bool> m_busy;
+    QAtomicInteger<bool> m_reportedReadyForCapture;
 
     QGstreamerElementFactory *m_audioInputFactory;
     QGstreamerElementFactory *m_videoInputFactory;
@@ -229,6 +238,7 @@ private:
     QCameraViewfinderSettings m_viewfinderSettings;
     QCameraViewfinderSettings m_actualViewfinderSettings;
 
+    CamerabinResourcePolicy m_resourcePolicy;
     CameraBinControl *m_cameraControl;
     CameraBinAudioEncoder *m_audioEncodeControl;
     CameraBinVideoEncoder *m_videoEncodeControl;
