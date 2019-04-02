@@ -96,6 +96,10 @@ public:
         ExposureParty = QCameraExposure::ExposureParty,
         ExposureCandlelight = QCameraExposure::ExposureCandlelight,
         ExposureBarcode = QCameraExposure::ExposureBarcode,
+        ExposureFlowers = QCameraExposure::ExposureFlowers,
+        ExposureAR = QCameraExposure::ExposureAR,
+        ExposureHDR = QCameraExposure::ExposureHDR,
+        ExposureCloseup = QCameraExposure::ExposureCloseup,
         ExposureModeVendor = QCameraExposure::ExposureModeVendor
     };
 

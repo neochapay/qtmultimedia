@@ -76,6 +76,7 @@ public:
         WhiteBalanceFluorescent = QCameraImageProcessing::WhiteBalanceFluorescent,
         WhiteBalanceFlash = QCameraImageProcessing::WhiteBalanceFlash,
         WhiteBalanceSunset = QCameraImageProcessing::WhiteBalanceSunset,
+        WhiteBalanceWarmFluorescent = QCameraImageProcessing::WhiteBalanceWarmFluorescent,
         WhiteBalanceVendor = QCameraImageProcessing::WhiteBalanceVendor
     };
 
@@ -89,6 +90,9 @@ public:
         ColorFilterWhiteboard = QCameraImageProcessing::ColorFilterWhiteboard,
         ColorFilterBlackboard = QCameraImageProcessing::ColorFilterBlackboard,
         ColorFilterAqua = QCameraImageProcessing::ColorFilterAqua,
+        ColorFilterEmboss = QCameraImageProcessing::ColorFilterEmboss,
+        ColorFilterSketch = QCameraImageProcessing::ColorFilterSketch,
+        ColorFilterNeon = QCameraImageProcessing::ColorFilterNeon,
         ColorFilterVendor = QCameraImageProcessing::ColorFilterVendor
     };
 
