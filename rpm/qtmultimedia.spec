@@ -94,7 +94,6 @@ Summary:    Qt Multimedia - GStreamer camerabin video capture media service
 Group:      Qt/Qt
 Requires:   %{name} = %{version}-%{release}
 Requires:   qt5-qtmultimedia-gsttools = %{version}-%{release}
-Requires:   gstreamer1.0-droid >= 0.20181213.0
 
 %description plugin-mediaservice-gstcamerabin
 This package contains the GStreamer camerabin video capture plugin for QtMultimedia
