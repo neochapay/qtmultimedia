@@ -960,11 +960,6 @@ bool CameraBinSession::processSyncMessage(const QGstreamerMessage &message)
             gst_buffer_unref(buffer);
 #endif
             if (!image.isNull()) {
-                static QMetaMethod exposedSignal = QMetaMethod::fromSignal(&CameraBinSession::imageExposed);
-                exposedSignal.invoke(this,
-                                     Qt::QueuedConnection,
-                                     Q_ARG(int,m_requestId));
-
                 static QMetaMethod capturedSignal = QMetaMethod::fromSignal(&CameraBinSession::imageCaptured);
                 capturedSignal.invoke(this,
                                       Qt::QueuedConnection,
@@ -987,6 +982,15 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
     GstMessage* gm = message.rawMessage();
 
     if (gm) {
+        if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_ELEMENT &&
+                        gst_structure_has_name(gst_message_get_structure(gm), "photo-capture-start")) {
+            static QMetaMethod exposedSignal =
+                            QMetaMethod::fromSignal(&CameraBinSession::imageExposed);
+            exposedSignal.invoke(this,
+                                 Qt::QueuedConnection,
+                                 Q_ARG(int,m_requestId));
+        }
+
         if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_ERROR) {
             GError *err;
             gchar *debug;
