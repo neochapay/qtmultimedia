@@ -56,7 +56,18 @@ ResourcePolicyInt::ResourcePolicyInt(QObject *parent)
 {
     const char *resourceClass = "player";
 
-    QByteArray envVar = qgetenv("NEMO_RESOURCE_CLASS_OVERRIDE");
+    QByteArray envVar = qgetenv("NEMO_RESOURCE_DISABLE");
+
+    if (!envVar.isEmpty()) {
+#ifdef RESOURCE_DEBUG
+        qDebug() << "##### Disable internal resource handling.";
+#endif
+        m_status = GrantedResource;
+        m_available = true;
+        return;
+    }
+
+    envVar = qgetenv("NEMO_RESOURCE_CLASS_OVERRIDE");
     if (!envVar.isEmpty()) {
         QString data(envVar);
         // Only allow few resource classes
@@ -132,7 +143,7 @@ void ResourcePolicyInt::removeClient(ResourcePolicyImpl *client)
 
         if (i.value().videoEnabled) {
             --m_video;
-            if (m_video == 0) {
+            if (m_video == 0 && m_resourceSet) {
                 m_resourceSet->deleteResource(ResourcePolicy::VideoPlaybackType);
                 m_resourceSet->update();
             }
@@ -161,6 +172,9 @@ bool ResourcePolicyInt::isVideoEnabled(const ResourcePolicyImpl *client) const
 
 void ResourcePolicyInt::setVideoEnabled(const ResourcePolicyImpl *client, bool videoEnabled)
 {
+    if (!m_resourceSet)
+        return;
+
     bool update = false;
 
     QMap<const ResourcePolicyImpl*, clientEntry>::iterator i = m_clients.find(client);
@@ -284,8 +298,10 @@ void ResourcePolicyInt::release(const ResourcePolicyImpl *client)
 #ifdef RESOURCE_DEBUG
                 qDebug() << "##### " << i.value().id << ": RELEASE call resourceSet->release()";
 #endif
-                m_resourceSet->release();
-                m_status = Initial;
+                if (m_resourceSet) {
+                    m_resourceSet->release();
+                    m_status = Initial;
+                }
             }
         }
     }
