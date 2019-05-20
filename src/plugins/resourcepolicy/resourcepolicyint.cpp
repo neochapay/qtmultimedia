@@ -70,13 +70,22 @@ ResourcePolicyInt::ResourcePolicyInt(QObject *parent)
     envVar = qgetenv("NEMO_RESOURCE_CLASS_OVERRIDE");
     if (!envVar.isEmpty()) {
         QString data(envVar);
-        // Only allow few resource classes
-        if (data == "navigator" ||
-            data == "call"      ||
-            data == "camera"    ||
-            data == "game"      ||
-            data == "player"    ||
-            data == "event")
+        // Only allow known resource classes
+        if (data == "proclaimer"    ||
+            data == "navigator"     ||
+            data == "call"          ||
+            data == "videoeditor"   ||
+            data == "camera"        ||
+            data == "ringtone"      ||
+            data == "alarm"         ||
+            data == "game"          ||
+            data == "player"        ||
+            data == "implicit"      ||
+            data == "event"         ||
+            data == "background"    ||
+            data == "alien"         ||
+            data == "aliencall"     ||
+            data == "nobody")
             resourceClass = envVar.constData();
     }
 
