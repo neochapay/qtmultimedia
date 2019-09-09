@@ -73,7 +73,7 @@
 #include <QtCore/qdatetime.h>
 
 //#define CAMERABIN_DEBUG 1
-//#define CAMERABIN_DEBUG_DUMP_BIN 1
+#define CAMERABIN_DEBUG_DUMP_BIN 1
 #define ENUM_NAME(c,e,v) (c::staticMetaObject.enumerator(c::staticMetaObject.indexOfEnumerator(e)).valueToKey((v)))
 
 #define FILENAME_PROPERTY "location"
@@ -1111,9 +1111,7 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
             }
 
 #ifdef CAMERABIN_DEBUG_DUMP_BIN
-            _gst_debug_bin_to_dot_file_with_ts(GST_BIN(m_camerabin),
-                                  GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /* GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES*/),
-                                  "camerabin_error");
+            GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_camerabin), GST_DEBUG_GRAPH_SHOW_ALL, "camerabin_error");
 #endif
 
 
@@ -1165,9 +1163,7 @@ bool CameraBinSession::processBusMessage(const QGstreamerMessage &message)
 #endif
 
 #ifdef CAMERABIN_DEBUG_DUMP_BIN
-                    _gst_debug_bin_to_dot_file_with_ts(GST_BIN(m_camerabin),
-                                  GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /*GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES*/),
-                                  "camerabin");
+                    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_camerabin), GST_DEBUG_GRAPH_SHOW_ALL, "camerabin");
 #endif
 
                     switch (newState) {
