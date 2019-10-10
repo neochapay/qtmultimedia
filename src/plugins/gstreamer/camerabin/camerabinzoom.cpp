@@ -133,7 +133,7 @@ void CameraBinZoom::updateMaxZoom(GObject *o, GParamSpec *p, gpointer d)
 
     CameraBinZoom *zoom = reinterpret_cast<CameraBinZoom *>(d);
 
-    QMetaObject::invokeMethod(zoom, "maximumOpticalZoomChanged",
+    QMetaObject::invokeMethod(zoom, "maximumDigitalZoomChanged",
                               Qt::QueuedConnection,
                               Q_ARG(qreal, zoomFactor));
 }
