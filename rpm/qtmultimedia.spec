@@ -156,7 +156,7 @@ This package contains the egl video node plugin.
 export QTDIR=/usr/share/qt5
 touch .git
 
-%qmake5 GST_VERSION=1.0 QT.widgets.name= DEFINES+=QT_NO_WIDGETS -r "DEFINES+=NEMO_AUDIO" "DEFINES+=DISABLE_V4L" CONFIG+=config_pulseaudio
+%qmake5 GST_VERSION=1.0 QT.widgets.name= DEFINES+=QT_NO_WIDGETS -r "DEFINES+=NEMO_AUDIO" CONFIG+=config_pulseaudio
 make %{?_smp_mflags}
 
 %install
