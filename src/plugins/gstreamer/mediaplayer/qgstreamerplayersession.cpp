@@ -57,7 +57,7 @@
 #include <QtCore/qstandardpaths.h>
 
 //#define DEBUG_PLAYBIN
-//#define DEBUG_VO_BIN_DUMP
+#define DEBUG_VO_BIN_DUMP
 
 QT_BEGIN_NAMESPACE
 
@@ -558,7 +558,7 @@ void QGstreamerPlayerSession::setVideoRenderer(QObject *videoOutput)
     m_renderer = renderer;
 
 #ifdef DEBUG_VO_BIN_DUMP
-    gst_debug_bin_to_dot_file_with_ts(GST_BIN(m_playbin),
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_playbin),
                                   GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /* GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES*/),
                                   "playbin_set");
 #endif
@@ -824,7 +824,7 @@ void QGstreamerPlayerSession::finishVideoOutputChange()
     gst_object_unref(GST_OBJECT(srcPad));
 
 #ifdef DEBUG_VO_BIN_DUMP
-    gst_debug_bin_to_dot_file_with_ts(GST_BIN(m_playbin),
+    GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_playbin),
                                   GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /* | GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES */),
                                   "playbin_finish");
 #endif
@@ -901,11 +901,21 @@ bool QGstreamerPlayerSession::play()
             if (!m_isPlaylist) {
                 qWarning() << "GStreamer; Unable to play -" << m_request.url().toString();
                 m_pendingState = m_state = QMediaPlayer::StoppedState;
+#ifdef DEBUG_VO_BIN_DUMP
+                GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_playbin),
+                                  GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /* GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES*/),
+                                  "playbin_error");
+#endif
                 emit stateChanged(m_state);
             } else {
                 return true;
             }
         } else {
+#ifdef DEBUG_VO_BIN_DUMP
+            GST_DEBUG_BIN_TO_DOT_FILE_WITH_TS(GST_BIN(m_playbin),
+                                  GstDebugGraphDetails(GST_DEBUG_GRAPH_SHOW_ALL /* GST_DEBUG_GRAPH_SHOW_MEDIA_TYPE | GST_DEBUG_GRAPH_SHOW_NON_DEFAULT_PARAMS | GST_DEBUG_GRAPH_SHOW_STATES*/),
+                                  "playbin_playing");
+#endif
             resumeVideoProbes();
             return true;
         }
