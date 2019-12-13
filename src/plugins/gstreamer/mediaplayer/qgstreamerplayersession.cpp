@@ -46,6 +46,7 @@
 
 #include <gst/gstvalue.h>
 #include <gst/base/gstbasesrc.h>
+#include <gst/pbutils/missing-plugins.h>
 
 #include <QtMultimedia/qmediametadata.h>
 #include <QtCore/qdatetime.h>
@@ -1309,13 +1310,15 @@ bool QGstreamerPlayerSession::processBusMessage(const QGstreamerMessage &message
             handlePlaybin2 = true;
         }
 
+        if (gst_is_missing_plugin_message(gm)) {
+            emit error(int(QMediaPlayer::FormatError), gst_missing_plugin_message_get_description(gm));
+        }
+
         if (handlePlaybin2) {
             if (GST_MESSAGE_TYPE(gm) == GST_MESSAGE_WARNING) {
                 GError *err;
                 gchar *debug;
                 gst_message_parse_warning(gm, &err, &debug);
-                if (err->domain == GST_STREAM_ERROR && err->code == GST_STREAM_ERROR_CODEC_NOT_FOUND)
-                    emit error(int(QMediaPlayer::FormatError), tr("Cannot play stream of type: <unknown>"));
                 // GStreamer shows warning for HTTP playlists
                 if (!m_isPlaylist)
                     qWarning() << "Warning:" << QString::fromUtf8(err->message);
