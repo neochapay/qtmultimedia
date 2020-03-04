@@ -89,16 +89,17 @@ QDeclarativeCameraImageProcessing::~QDeclarativeCameraImageProcessing()
 
     \table
     \header \li Value \li Description
-    \row \li WhiteBalanceManual       \li Manual white balance. In this mode the manual white balance property value is used.
-    \row \li WhiteBalanceAuto         \li Auto white balance mode.
-    \row \li WhiteBalanceSunlight     \li Sunlight white balance mode.
-    \row \li WhiteBalanceCloudy       \li Cloudy white balance mode.
-    \row \li WhiteBalanceShade        \li Shade white balance mode.
-    \row \li WhiteBalanceTungsten     \li Tungsten white balance mode.
-    \row \li WhiteBalanceFluorescent  \li Fluorescent white balance mode.
-    \row \li WhiteBalanceFlash        \li Flash white balance mode.
-    \row \li WhiteBalanceSunset       \li Sunset white balance mode.
-    \row \li WhiteBalanceVendor       \li Vendor defined white balance mode.
+    \row \li WhiteBalanceManual          \li Manual white balance. In this mode the manual white balance property value is used.
+    \row \li WhiteBalanceAuto            \li Auto white balance mode.
+    \row \li WhiteBalanceSunlight        \li Sunlight white balance mode.
+    \row \li WhiteBalanceCloudy          \li Cloudy white balance mode.
+    \row \li WhiteBalanceShade           \li Shade white balance mode.
+    \row \li WhiteBalanceTungsten        \li Tungsten white balance mode.
+    \row \li WhiteBalanceFluorescent     \li Fluorescent white balance mode.
+    \row \li WhiteBalanceFlash           \li Flash white balance mode.
+    \row \li WhiteBalanceSunset          \li Sunset white balance mode.
+    \row \li WhiteBalanceWarmFluorescent \li Warm fluorescent white balance mode.
+    \row \li WhiteBalanceVendor          \li Vendor defined white balance mode.
     \endtable
 
     \sa manualWhiteBalance
@@ -234,6 +235,9 @@ void QDeclarativeCameraImageProcessing::setDenoisingLevel(qreal value)
     \row \li CameraImageProcessing.ColorFilterWhiteboard \li A whiteboard filter.
     \row \li CameraImageProcessing.ColorFilterBlackboard \li A blackboard filter.
     \row \li CameraImageProcessing.ColorFilterAqua       \li An aqua filter.
+    \row \li CameraImageProcessing.ColorFilterEmboss     \li An emboss filter.
+    \row \li CameraImageProcessing.ColorFilterSketch     \li An sketch filter.
+    \row \li CameraImageProcessing.ColorFilterNeon       \li An neon filter.
     \row \li CameraImageProcessing.ColorFilterVendor     \li The base value for vendor defined filters.
     \endtable
 

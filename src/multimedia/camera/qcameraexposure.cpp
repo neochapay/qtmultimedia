@@ -642,6 +642,10 @@ void QCameraExposure::setAutoShutterSpeed()
     \value ExposureParty         Party mode. Since 5.5
     \value ExposureCandlelight   Candlelight mode. Since 5.5
     \value ExposureBarcode       Barcode mode. Since 5.5
+    \value ExposureFlowers       Flowers exposure mode.  Since 5.x
+    \value ExposureAR            Augmented reality exposure mode.  Since 5.x
+    \value ExposureHDR           High dynamic range exposure mode.  Since 5.x
+    \value ExposureCloseup       Closeup exposure mode.  Since 5.x
     \value ExposureModeVendor    The base value for device specific exposure modes.
 */
 

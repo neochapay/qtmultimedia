@@ -347,6 +347,10 @@ void QDeclarativeCameraExposure::setAutoIsoSensitivity()
     \row \li Camera.ExposureParty         \li Party exposure mode.  Since 5.5
     \row \li Camera.ExposureCandlelight   \li Candlelight exposure mode.  Since 5.5
     \row \li Camera.ExposureBarcode       \li Barcode exposure mode.  Since 5.5
+    \row \li Camera.ExposureFlowers       \li Flowers exposure mode.  Since 5.x
+    \row \li Camera.ExposureAR            \li Augmented reality exposure mode.  Since 5.x
+    \row \li Camera.ExposureHDR           \li High dynamic range exposure mode.  Since 5.x
+    \row \li Camera.ExposureCloseup       \li Closeup exposure mode.  Since 5.x
     \row \li Camera.ExposureModeVendor    \li The base value for device specific exposure modes.
     \endtable
 */

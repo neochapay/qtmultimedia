@@ -305,17 +305,18 @@ void QCameraImageProcessing::setDenoisingLevel(qreal level)
 /*!
     \enum QCameraImageProcessing::WhiteBalanceMode
 
-    \value WhiteBalanceAuto         Auto white balance mode.
-    \value WhiteBalanceManual       Manual white balance. In this mode the white balance should be set with
-                                    setManualWhiteBalance()
-    \value WhiteBalanceSunlight     Sunlight white balance mode.
-    \value WhiteBalanceCloudy       Cloudy white balance mode.
-    \value WhiteBalanceShade        Shade white balance mode.
-    \value WhiteBalanceTungsten     Tungsten (incandescent) white balance mode.
-    \value WhiteBalanceFluorescent  Fluorescent white balance mode.
-    \value WhiteBalanceFlash        Flash white balance mode.
-    \value WhiteBalanceSunset       Sunset white balance mode.
-    \value WhiteBalanceVendor       Base value for vendor defined white balance modes.
+    \value WhiteBalanceAuto             Auto white balance mode.
+    \value WhiteBalanceManual           Manual white balance. In this mode the white balance should be set with
+                                        setManualWhiteBalance()
+    \value WhiteBalanceSunlight         Sunlight white balance mode.
+    \value WhiteBalanceCloudy           Cloudy white balance mode.
+    \value WhiteBalanceShade            Shade white balance mode.
+    \value WhiteBalanceTungsten         Tungsten (incandescent) white balance mode.
+    \value WhiteBalanceFluorescent      Fluorescent white balance mode.
+    \value WhiteBalanceFlash            Flash white balance mode.
+    \value WhiteBalanceSunset           Sunset white balance mode.
+    \value WhiteBalanceWarmFluorescent  Warm fluorescent white balance mode.
+    \value WhiteBalanceVendor           Base value for vendor defined white balance modes.
 */
 
 /*!
@@ -330,6 +331,9 @@ void QCameraImageProcessing::setDenoisingLevel(qreal level)
     \value ColorFilterWhiteboard         A whiteboard filter.
     \value ColorFilterBlackboard         A blackboard filter.
     \value ColorFilterAqua               An aqua filter.
+    \value ColorFilterEmboss             An emboss filter.
+    \value ColorFilterSketch             A sketch filter.
+    \value ColorFilterNeon               A neon filter.
     \value ColorFilterVendor             The base value for vendor defined filters.
 
     \since 5.5
