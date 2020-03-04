@@ -371,6 +371,10 @@ Module {
                 "ExposureParty": 18,
                 "ExposureCandlelight": 19,
                 "ExposureBarcode": 20,
+                "ExposureFlowers": 21,
+                "ExposureAR": 22,
+                "ExposureHDR": 23,
+                "ExposureCloseup": 24,
                 "ExposureModeVendor": 1000
             }
         }
@@ -641,6 +645,10 @@ Module {
                 "ExposureParty": 18,
                 "ExposureCandlelight": 19,
                 "ExposureBarcode": 20,
+                "ExposureFlowers": 21,
+                "ExposureAR": 22,
+                "ExposureHDR": 23,
+                "ExposureCloseup": 24,
                 "ExposureModeVendor": 1000
             }
         }
@@ -848,6 +856,7 @@ Module {
                 "WhiteBalanceFluorescent": 6,
                 "WhiteBalanceFlash": 7,
                 "WhiteBalanceSunset": 8,
+                "WhiteBalanceWarmFluorescent": 9,
                 "WhiteBalanceVendor": 1000
             }
         }
@@ -863,6 +872,9 @@ Module {
                 "ColorFilterWhiteboard": 6,
                 "ColorFilterBlackboard": 7,
                 "ColorFilterAqua": 8,
+                "ColorFilterEmboss": 9,
+                "ColorFilterSketch": 10,
+                "ColorFilterNeon": 11,
                 "ColorFilterVendor": 1000
             }
         }
