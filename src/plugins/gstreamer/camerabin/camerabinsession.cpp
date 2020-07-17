@@ -458,6 +458,7 @@ void CameraBinSession::setAudioCaptureCaps()
 
 GstElement *CameraBinSession::buildCameraSource()
 {
+    bool connectReadyForCapture = false;
 #if CAMERABIN_DEBUG
     qDebug() << Q_FUNC_INFO;
 #endif
@@ -525,6 +526,14 @@ GstElement *CameraBinSession::buildCameraSource()
 
                 if (m_videoSrc)
                     g_object_set(G_OBJECT(m_cameraSrc), "video-source", m_videoSrc, NULL);
+
+                 // CameraBin doesn't emit ready-for-capture notify signal
+                 // in the same manner that gst-droid does, thus making
+                 // Qt report "Camera not ready error" due to changes in
+                 // 46c29f5b and b04854b4. Workaround this by assuming that
+                 // camera is ready.
+                 m_reportedReadyForCapture = true;
+                 m_readyForCapture = true;
             }
 
             if (m_videoSrc)
@@ -536,12 +545,21 @@ GstElement *CameraBinSession::buildCameraSource()
             } else {
                 g_object_set(G_OBJECT(m_cameraSrc), "camera-device", 0, NULL);
             }
+
+            // Explicitly reset those values in case of
+            // camera changing from v4l to this
+            m_reportedReadyForCapture = false;
+            m_readyForCapture = false;
+
+            connectReadyForCapture = true;
         }
     }
 
     if (m_cameraSrc != camSrc) {
         g_object_set(G_OBJECT(m_camerabin), CAMERA_SOURCE_PROPERTY, m_cameraSrc, NULL);
-        g_signal_connect(G_OBJECT(m_cameraSrc), "notify::ready-for-capture", G_CALLBACK(updateReadyForCapture), this);
+        if (connectReadyForCapture) {
+            g_signal_connect(G_OBJECT(m_cameraSrc), "notify::ready-for-capture", G_CALLBACK(updateReadyForCapture), this);
+        }
 
     }
 
