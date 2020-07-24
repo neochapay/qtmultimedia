@@ -43,6 +43,12 @@ OTHER_FILES += \
     shaders/biplanaryuvvideo.frag \
     shaders/biplanaryuvvideo_swizzle.frag \
     shaders/triplanaryuvvideo.vert \
-    shaders/triplanaryuvvideo.frag
+    shaders/triplanaryuvvideo.frag \
+    shaders/uyvyvideo.frag \
+    shaders/yuyvvideo.frag
 
 load(qt_module)
+
+DISTFILES += \
+    shaders/uyvyvideo.frag \
+    shaders/yuyvvideo.frag

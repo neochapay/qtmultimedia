@@ -9,5 +9,7 @@
         <file>shaders/biplanaryuvvideo_swizzle.frag</file>
         <file>shaders/triplanaryuvvideo.frag</file>
         <file>shaders/triplanaryuvvideo.vert</file>
+        <file>shaders/uyvyvideo.frag</file>
+        <file>shaders/yuyvvideo.frag</file>
     </qresource>
 </RCC>
