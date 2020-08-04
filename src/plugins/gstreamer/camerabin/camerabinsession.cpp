@@ -72,7 +72,7 @@
 #include <QtGui/qimage.h>
 #include <QtCore/qdatetime.h>
 
-//#define CAMERABIN_DEBUG 1
+#define CAMERABIN_DEBUG 1
 #define CAMERABIN_DEBUG_DUMP_BIN 1
 #define ENUM_NAME(c,e,v) (c::staticMetaObject.enumerator(c::staticMetaObject.indexOfEnumerator(e)).valueToKey((v)))
 
